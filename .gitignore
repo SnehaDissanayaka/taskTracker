@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.user
+*.db
+
+# Node / Angular
+node_modules/
+.angular/
+dist/
+package-lock.json
+
+# IDE
+.vs/
+.vscode/
+
+# Postman collection lives in a separate repo
+postman/

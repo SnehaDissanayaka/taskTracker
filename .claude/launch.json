@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "task-tracker-client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "frontend/task-tracker-client"],
+      "port": 4200
+    }
+  ]
+}
