@@ -21,14 +21,18 @@ The backend needs a SQL Server instance to connect to. The easiest way is a
 Docker container:
 
 ```bash
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong!Passw0rd" \
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=<CHOOSE_YOUR_OWN_PASSWORD>" \
   -p 1433:1433 --name tasktracker-sql --hostname tasktracker-sql \
   -d mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-This only needs to be run once — after that, `docker start tasktracker-sql`
-brings it back up. Use `docker logs tasktracker-sql` to confirm it's ready
-("SQL Server is now ready for client connections").
+Pick your own password (12+ chars, mixing case/digits/symbols) — don't reuse
+one from a public doc or example, and never commit the real value anywhere
+in this repo (see [Secrets](#secrets--dont-put-them-in-appsettingsjson)
+below). This container only needs to be created once — after that,
+`docker start tasktracker-sql` brings it back up. Use
+`docker logs tasktracker-sql` to confirm it's ready ("SQL Server is now
+ready for client connections").
 
 ## Running the backend
 
@@ -38,7 +42,7 @@ The connection string lives in user-secrets, not `appsettings.json` (see
 ```bash
 cd backend/TaskTrackerApi
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=TaskTrackerDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=TaskTrackerDb;User Id=sa;Password=<THE_PASSWORD_YOU_CHOSE_ABOVE>;TrustServerCertificate=True;"
 ```
 
 Then run it:
