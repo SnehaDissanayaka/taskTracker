@@ -89,7 +89,7 @@ the only project that knows about all the others (it wires them together in
 | `TaskTracker.Data` | EF Core: `AppDbContext`, `TaskRepository`, and the SQL Server provider. | Core |
 | `TaskTracker.Api` | HTTP only: controllers, Swagger, CORS, DI wiring. | Core, Services, Data |
 
-- `backend/TaskTracker.Api/Controllers/TasksController.cs` — CRUD endpoints (`GET/POST/PUT/DELETE /api/tasks`)
+- `backend/TaskTracker.Api/Controllers/V1/TasksController.cs` — CRUD endpoints (`GET/POST/PUT/DELETE /api/v1/tasks`); controllers are grouped by API version under `Controllers/V1`, `Controllers/V2`, ...
 - `backend/TaskTracker.Api/Program.cs` — app startup, CORS policy (currently allows `localhost:4200` only — update this when you deploy the frontend)
 
 ### Frontend
