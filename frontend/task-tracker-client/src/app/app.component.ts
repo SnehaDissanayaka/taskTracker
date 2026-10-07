@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatListModule } from '@angular/material/list';
-import { TaskService } from './task.service';
+import { TaskStore } from './task.store';
 import { TaskItem } from './task.model';
 
 @Component({
@@ -32,8 +32,8 @@ import { TaskItem } from './task.model';
       <mat-icon>task_alt</mat-icon>
       <span class="title">Task Tracker</span>
       <span class="spacer"></span>
-      <span class="count" *ngIf="tasks.length">
-        {{ remaining }} of {{ tasks.length }} left
+      <span class="count" *ngIf="store.tasks().length">
+        {{ store.remaining() }} of {{ store.tasks().length }} left
       </span>
     </mat-toolbar>
 
@@ -63,13 +63,13 @@ import { TaskItem } from './task.model';
       </mat-card>
 
       <mat-card class="list-card">
-        <mat-list *ngIf="tasks.length; else empty">
-          <mat-list-item *ngFor="let task of tasks">
+        <mat-list *ngIf="store.tasks().length; else empty">
+          <mat-list-item *ngFor="let task of store.tasks()">
             <div class="row">
               <mat-checkbox
                 color="primary"
                 [checked]="task.isComplete"
-                (change)="toggleComplete(task)"
+                (change)="toggle(task)"
               >
                 <span [class.done-text]="task.isComplete">{{ task.title }}</span>
               </mat-checkbox>
@@ -77,7 +77,7 @@ import { TaskItem } from './task.model';
                 mat-icon-button
                 color="warn"
                 aria-label="Delete task"
-                (click)="removeTask(task)"
+                (click)="remove(task)"
               >
                 <mat-icon>delete_outline</mat-icon>
               </button>
@@ -96,38 +96,25 @@ import { TaskItem } from './task.model';
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
-  tasks: TaskItem[] = [];
   newTitle = '';
 
-  constructor(private taskService: TaskService) {}
-
-  get remaining(): number {
-    return this.tasks.filter((t) => !t.isComplete).length;
-  }
+  constructor(protected store: TaskStore) {}
 
   ngOnInit(): void {
-    this.loadTasks();
-  }
-
-  loadTasks(): void {
-    this.taskService.getAll().subscribe((tasks) => (this.tasks = tasks));
+    this.store.load();
   }
 
   addTask(): void {
     const title = this.newTitle.trim();
     if (!title) return;
-    this.taskService.create({ title, isComplete: false }).subscribe(() => {
-      this.newTitle = '';
-      this.loadTasks();
-    });
+    this.store.add(title).subscribe(() => (this.newTitle = ''));
   }
 
-  toggleComplete(task: TaskItem): void {
-    const updated = { ...task, isComplete: !task.isComplete };
-    this.taskService.update(task.id, updated).subscribe(() => this.loadTasks());
+  toggle(task: TaskItem): void {
+    this.store.toggle(task).subscribe();
   }
 
-  removeTask(task: TaskItem): void {
-    this.taskService.delete(task.id).subscribe(() => this.loadTasks());
+  remove(task: TaskItem): void {
+    this.store.remove(task).subscribe();
   }
 }
