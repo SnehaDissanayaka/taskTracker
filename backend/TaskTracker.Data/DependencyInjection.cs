@@ -14,10 +14,9 @@ public static class DependencyInjection
         return services;
     }
 
-    // Fine for a demo app; use real EF Core migrations for production.
-    public static void EnsureDatabaseCreated(this IServiceProvider services)
+    public static void ApplyMigrations(this IServiceProvider services)
     {
         using var scope = services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
     }
 }
