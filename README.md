@@ -97,6 +97,20 @@ the only project that knows about all the others (it wires them together in
 - `frontend/task-tracker-client/src/app/task.store.ts` — task state and actions; the component only renders and forwards events
 - `frontend/task-tracker-client/src/app/task.service.ts` — HTTP calls to the API
 
+## Azure configuration
+
+Nothing secret is committed. In Azure the API is configured entirely through App Service settings:
+
+| Where | Name | Value |
+|---|---|---|
+| App Service → Environment variables → Connection strings | `DefaultConnection` (type **SQLAzure**) | the Azure SQL ADO.NET connection string |
+| App Service → Environment variables → App settings | `Cors__AllowedOrigins__0` | the deployed frontend origin, e.g. `https://<name>.azurestaticapps.net` (add `__1`, `__2`, ... for more) |
+| GitHub → Settings → Secrets and variables → Actions | `AZURE_WEBAPP_PUBLISH_PROFILE` | the contents of the App Service publish profile |
+
+Local CORS origins (`localhost:4200`) live in `appsettings.Development.json` and are not loaded in Azure.
+`.github/workflows/deploy-api.yml` builds and deploys the API on every push to `main` that touches `backend/`.
+The frontend's production API URL is in `frontend/task-tracker-client/src/environments/environment.prod.ts`.
+
 ## Setting up git properly
 
 Run this from the **repo root** (`taskTracker/`, the folder containing this

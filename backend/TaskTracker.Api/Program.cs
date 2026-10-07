@@ -25,17 +25,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDataLayer(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddServicesLayer();
 
-// CORS — allows the Angular dev server (and later, deployed frontend) to call this API.
-// TODO: Replace the origin list with real frontend URL(s) once deployed.
+// CORS — origins come from configuration (Cors:AllowedOrigins). Development origins live in
+// appsettings.Development.json; in Azure set Cors__AllowedOrigins__0, __1, ... as app settings.
 const string CorsPolicy = "AllowFrontend";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4200",
-                "https://localhost:4200"
-            )
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
