@@ -55,11 +55,32 @@ dotnet run --launch-profile https
 
 `--launch-profile https` matters — the default profile order picks `http`
 otherwise, which skips Swagger and HTTPS. This starts the API on
-`https://localhost:5001`, auto-creates the `TaskTrackerDb` database and
-`Tasks` table on first run (via `EnsureCreated()`), and exposes Swagger UI at
-`/swagger` in Development mode. Confirm the port dotnet actually gives you —
-if it differs, update `apiBaseUrl` in `src/environments/environment.ts` on
-the frontend.
+`https://localhost:5001`, applies any pending EF Core migrations on startup
+(creating the `TaskTrackerDb` database and `Tasks` table on first run), and
+exposes Swagger UI at `/swagger` in Development mode. Confirm the port dotnet
+actually gives you — if it differs, update `apiBaseUrl` in
+`src/environments/environment.ts` on the frontend.
+
+### Database migrations
+
+The schema is managed with EF Core migrations (in `TaskTracker.Data/Migrations`)
+and applied automatically when the API starts, both locally and in Azure. After
+changing an entity or the `AppDbContext`, add a migration from the repo root:
+
+```bash
+dotnet tool restore
+dotnet tool run dotnet-ef migrations add <Name> --project backend/TaskTracker.Data --startup-project backend/TaskTracker.Api --output-dir Migrations
+```
+
+Commit the generated files. `DesignTimeDbContextFactory` lets `dotnet ef` build
+the context without running `Program.cs`, so generating a migration never touches
+a database.
+
+If a database was created *before* migrations existed (by `EnsureCreated()`),
+the first migration fails with "There is already an object named 'Tasks'".
+Either drop that database and let the app recreate it, or tell EF the schema is
+already in place by creating `__EFMigrationsHistory` and inserting a row for
+`InitialCreate`.
 
 ## Running the frontend
 
@@ -152,7 +173,7 @@ instead (covered in the deployment article).
 
 ## Next steps (the actual point of this repo)
 1. ~~Get it running locally end-to-end.~~ Done — SQL Server via Docker, EF
-   Core `EnsureCreated()`, full CRUD verified through the Angular UI.
+   Core migrations, full CRUD verified through the Angular UI.
 2. Push to a GitHub repo.
 3. Follow the Azure deployment article: create an App Service, set up an
    Azure DevOps pipeline, point the connection string at Azure SQL, and

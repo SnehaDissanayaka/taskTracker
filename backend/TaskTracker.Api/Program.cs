@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.Services.EnsureDatabaseCreated();
+app.Services.ApplyMigrations();
 
 if (app.Environment.IsDevelopment())
 {
