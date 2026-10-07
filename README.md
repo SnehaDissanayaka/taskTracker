@@ -7,7 +7,8 @@ the point is to have something real to deploy, not to build a big app.
 ## Stack
 - **Backend**: ASP.NET Core 10 Web API, EF Core with SQL Server (swap to Azure
   SQL when you deploy — that swap is good article content on its own).
-- **Frontend**: Angular 17 (standalone components), calling the API over HTTP.
+- **Frontend**: Angular 17 (standalone components) with Angular Material,
+  calling the API over HTTP.
 
 ## Prerequisites
 - .NET 10 SDK (`dotnet --version` should show 10.x)
@@ -40,7 +41,7 @@ The connection string lives in user-secrets, not `appsettings.json` (see
 [Secrets](#secrets--dont-put-them-in-appsettingsjson) below) — set it once:
 
 ```bash
-cd backend/TaskTrackerApi
+cd backend/TaskTracker.Api
 dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=TaskTrackerDb;User Id=sa;Password=<THE_PASSWORD_YOU_CHOSE_ABOVE>;TrustServerCertificate=True;"
 ```
@@ -73,9 +74,28 @@ URL set in `src/environments/environment.ts` — update it if your backend is
 running on a different port.
 
 ## What's here
-- `backend/TaskTrackerApi/Controllers/TasksController.cs` — CRUD endpoints (`GET/POST/PUT/DELETE /api/tasks`)
-- `backend/TaskTrackerApi/Program.cs` — app startup, CORS policy (currently allows `localhost:4200` only — update this when you deploy the frontend)
-- `frontend/task-tracker-client/src/app/app.component.ts` — the whole UI (list, add, complete, delete)
+
+### Backend layers
+
+The backend is one solution (`backend/TaskTracker.sln`) split into four
+projects. Dependencies point inward: `Core` references nothing, and `Api` is
+the only project that knows about all the others (it wires them together in
+`Program.cs`).
+
+| Project | Responsibility | References |
+|---|---|---|
+| `TaskTracker.Core` | Entities (`Models/`), request/response DTOs (`Dtos/`), and the interfaces (`ITaskService`, `ITaskRepository`) the other layers implement or consume. No dependencies. | — |
+| `TaskTracker.Services` | Business logic (`TaskService`). Depends on `ITaskRepository`, never on EF Core. | Core |
+| `TaskTracker.Data` | EF Core: `AppDbContext`, `TaskRepository`, and the SQL Server provider. | Core |
+| `TaskTracker.Api` | HTTP only: controllers, Swagger, CORS, DI wiring. | Core, Services, Data |
+
+- `backend/TaskTracker.Api/Controllers/V1/TasksController.cs` — CRUD endpoints (`GET/POST/PUT/DELETE /api/v1/tasks`); controllers are grouped by API version under `Controllers/V1`, `Controllers/V2`, ...
+- `backend/TaskTracker.Api/Program.cs` — app startup, CORS policy (currently allows `localhost:4200` only — update this when you deploy the frontend)
+
+### Frontend
+- `frontend/task-tracker-client/src/app/app.component.ts` — the UI (list, add, complete, delete)
+- `frontend/task-tracker-client/src/app/task.store.ts` — task state and actions; the component only renders and forwards events
+- `frontend/task-tracker-client/src/app/task.service.ts` — HTTP calls to the API
 
 ## Setting up git properly
 

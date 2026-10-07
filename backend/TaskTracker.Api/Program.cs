@@ -1,15 +1,29 @@
-using Microsoft.EntityFrameworkCore;
-using TaskTrackerApi.Data;
+using Asp.Versioning;
+using TaskTracker.Data;
+using TaskTracker.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddControllers();
+builder.Services
+    .AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddMvc()
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDataLayer(builder.Configuration.GetConnectionString("DefaultConnection"));
+builder.Services.AddServicesLayer();
 
 // CORS — allows the Angular dev server (and later, deployed frontend) to call this API.
 // TODO: Replace the origin list with real frontend URL(s) once deployed.
@@ -29,12 +43,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Auto-create the database on startup (fine for a demo app; use real migrations for production).
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
-}
+app.Services.EnsureDatabaseCreated();
 
 if (app.Environment.IsDevelopment())
 {

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TaskTrackerApi.Models;
+using TaskTracker.Core.Models;
 
-namespace TaskTrackerApi.Data;
+namespace TaskTracker.Data;
 
 public class AppDbContext : DbContext
 {
