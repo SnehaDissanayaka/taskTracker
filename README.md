@@ -7,7 +7,8 @@ the point is to have something real to deploy, not to build a big app.
 ## Stack
 - **Backend**: ASP.NET Core 10 Web API, EF Core with SQL Server (swap to Azure
   SQL when you deploy — that swap is good article content on its own).
-- **Frontend**: Angular 17 (standalone components), calling the API over HTTP.
+- **Frontend**: Angular 17 (standalone components) with Angular Material,
+  calling the API over HTTP.
 
 ## Prerequisites
 - .NET 10 SDK (`dotnet --version` should show 10.x)
