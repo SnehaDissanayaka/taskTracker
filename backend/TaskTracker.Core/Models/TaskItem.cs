@@ -1,4 +1,4 @@
-namespace TaskTrackerApi.Models;
+namespace TaskTracker.Core.Models;
 
 public class TaskItem
 {
