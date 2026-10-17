@@ -27,6 +27,11 @@ public class TaskRepository : ITaskRepository
         return await _context.Tasks.FirstOrDefaultAsync(t => t.ClientId == clientId && t.Id == id);
     }
 
+    public async Task<int> CountAsync(Guid clientId)
+    {
+        return await _context.Tasks.CountAsync(t => t.ClientId == clientId);
+    }
+
     public async Task<TaskItem> AddAsync(TaskItem task)
     {
         _context.Tasks.Add(task);

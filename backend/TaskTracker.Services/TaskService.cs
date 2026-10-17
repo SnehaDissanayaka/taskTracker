@@ -1,4 +1,6 @@
+using TaskTracker.Core.Configuration;
 using TaskTracker.Core.Dtos;
+using TaskTracker.Core.Exceptions;
 using TaskTracker.Core.Interfaces;
 using TaskTracker.Core.Models;
 
@@ -7,10 +9,12 @@ namespace TaskTracker.Services;
 public class TaskService : ITaskService
 {
     private readonly ITaskRepository _repository;
+    private readonly TaskLimits _limits;
 
-    public TaskService(ITaskRepository repository)
+    public TaskService(ITaskRepository repository, TaskLimits limits)
     {
         _repository = repository;
+        _limits = limits;
     }
 
     public async Task<IReadOnlyList<TaskResponse>> GetAllAsync(Guid clientId)
@@ -27,6 +31,11 @@ public class TaskService : ITaskService
 
     public async Task<TaskResponse> CreateAsync(Guid clientId, CreateTaskRequest request)
     {
+        if (await _repository.CountAsync(clientId) >= _limits.MaxTasksPerClient)
+        {
+            throw new TaskLimitExceededException(_limits.MaxTasksPerClient);
+        }
+
         var task = new TaskItem
         {
             Title = request.Title.Trim(),

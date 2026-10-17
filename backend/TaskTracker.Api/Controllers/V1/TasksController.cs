@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using TaskTracker.Core.Dtos;
+using TaskTracker.Core.Exceptions;
 using TaskTracker.Core.Interfaces;
 
 namespace TaskTracker.Api.Controllers.V1;
@@ -49,8 +50,15 @@ public class TasksController : ControllerBase
     public async Task<ActionResult<TaskResponse>> CreateTask([FromHeader(Name = ClientIdHeader)] Guid clientId, CreateTaskRequest request)
     {
         if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
-        var created = await _tasks.CreateAsync(clientId, request);
-        return CreatedAtAction(nameof(GetTask), new { id = created.Id }, created);
+        try
+        {
+            var created = await _tasks.CreateAsync(clientId, request);
+            return CreatedAtAction(nameof(GetTask), new { id = created.Id }, created);
+        }
+        catch (TaskLimitExceededException ex)
+        {
+            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Task limit reached", detail: ex.Message);
+        }
     }
 
     // PUT: api/v1/tasks/5
