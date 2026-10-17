@@ -118,6 +118,16 @@ the only project that knows about all the others (it wires them together in
 - `frontend/task-tracker-client/src/app/task.store.ts` — task state and actions; the component only renders and forwards events
 - `frontend/task-tracker-client/src/app/task.service.ts` — HTTP calls to the API
 
+## Per-browser task lists
+
+Each browser gets its own list without accounts or IP addresses. On first visit the frontend generates a random UUID (`crypto.randomUUID()`), keeps it in `localStorage` and sends it as an `X-Client-Id` header on API calls (only to our own API). The API stores it on each task (`Tasks.ClientId`) and only ever reads, updates or deletes rows with the caller's ID; another client's task id returns 404.
+
+- The ID is random and not derived from anything about the person, so it is not tied to an identity, and the API never returns it. It is a bearer secret: anyone who has it can see that list.
+- IP addresses are deliberately not used: they can be personal data under GDPR, and many people share one (offices, shared Wi-Fi, carrier-grade NAT), so IP-keyed lists would leak between users.
+- A header is used instead of a cookie because the site and the API are on different domains, which makes a cookie third-party and blocked by default in Safari and Firefox.
+- Clearing site data, using another browser or device, or private mode gives a new, empty list. Syncing across devices would need real accounts.
+- Rows created before this feature are owned by the all-zero ID, which the API rejects, so they are not visible to anyone.
+
 ## Azure configuration
 
 Nothing secret is committed. In Azure the API is configured entirely through App Service settings:
