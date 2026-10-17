@@ -128,6 +128,24 @@ Each browser gets its own list without accounts or IP addresses. On first visit 
 - Clearing site data, using another browser or device, or private mode gives a new, empty list. Syncing across devices would need real accounts.
 - Rows created before this feature are owned by the all-zero ID, which the API rejects, so they are not visible to anyone.
 
+## Abuse protection
+
+Because anyone can reach the API and mint a client ID for free, the API limits what a single caller can do. Everything runs on free tiers with hard quotas, so the realistic risk is someone exhausting the App Service CPU quota or the database's monthly vCore seconds and taking the app offline, not a bill.
+
+- **Per-client cap:** at most `Limits:MaxTasksPerClient` (200) tasks per client ID; creating more returns `409`.
+- **Rate limits (`429` with `Retry-After`)**, in `TaskTracker.Api/RateLimiting`, all configurable under `RateLimiting`:
+  - per IP: `PerIpPerMinute` (120) requests and `PerIpWritesPerMinute` (30) POST/PUT/DELETE requests;
+  - global: `GlobalPerMinute` (600) requests and `GlobalCreatesPerHour` (600) creates, which also bounds how fast rows can accumulate.
+- Limits are keyed by IP and never by `X-Client-Id`, which a caller can rotate freely. IPv6 clients are grouped by their /64 prefix.
+- The limiter sits after CORS so `429` responses are readable by the browser; the frontend shows a message for `409` and `429`.
+- **Needs the real client IP:** on App Service set `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`. Without it every user appears to come from the platform's proxy and shares one bucket.
+- Limiter state is in memory, so it resets on restart and is per instance. That is fine for one free-tier instance.
+- **Not covered:** a distributed attack from many IPs, which needs an edge service (WAF/CDN). If IDs get abused, the next step is server-issued signed IDs; for stale data, a retention cleanup.
+
+### Monitoring the free quotas
+
+In the portal, open the SQL database → **Monitoring → Alerts → Create → Alert rule**, pick the **Free amount remaining** metric, set the condition to *less than 10000* and attach an email action group. That warns you before the database auto-pauses for the rest of the month. Disconnect query tools (SSMS, the portal query editor) when finished, since an open connection stops the database from pausing and burns vCore seconds.
+
 ## Azure configuration
 
 Nothing secret is committed. In Azure the API is configured entirely through App Service settings:
@@ -136,6 +154,7 @@ Nothing secret is committed. In Azure the API is configured entirely through App
 |---|---|---|
 | App Service → Environment variables → Connection strings | `DefaultConnection` (type **SQLAzure**) | the Azure SQL ADO.NET connection string |
 | App Service → Environment variables → App settings | `Cors__AllowedOrigins__0` | the deployed frontend origin, e.g. `https://<name>.azurestaticapps.net` (add `__1`, `__2`, ... for more) |
+| App Service → Environment variables → App settings | `ASPNETCORE_FORWARDEDHEADERS_ENABLED` | `true`, so rate limiting sees each caller's real IP |
 | GitHub → Settings → Secrets and variables → Actions | `AZURE_WEBAPP_PUBLISH_PROFILE` | the contents of the App Service publish profile |
 
 Local CORS origins (`localhost:4200`) live in `appsettings.Development.json` and are not loaded in Azure.
