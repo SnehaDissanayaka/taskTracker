@@ -13,17 +13,18 @@ public class TaskRepository : ITaskRepository
         _context = context;
     }
 
-    public async Task<IReadOnlyList<TaskItem>> GetAllAsync()
+    public async Task<IReadOnlyList<TaskItem>> GetAllAsync(Guid clientId)
     {
         return await _context.Tasks
             .AsNoTracking()
+            .Where(t => t.ClientId == clientId)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
     }
 
-    public async Task<TaskItem?> GetByIdAsync(int id)
+    public async Task<TaskItem?> GetByIdAsync(Guid clientId, int id)
     {
-        return await _context.Tasks.FindAsync(id);
+        return await _context.Tasks.FirstOrDefaultAsync(t => t.ClientId == clientId && t.Id == id);
     }
 
     public async Task<TaskItem> AddAsync(TaskItem task)

@@ -10,6 +10,8 @@ namespace TaskTracker.Api.Controllers.V1;
 [Route("api/v{version:apiVersion}/[controller]")]
 public class TasksController : ControllerBase
 {
+    private const string ClientIdHeader = "X-Client-Id";
+
     private readonly ITaskService _tasks;
 
     public TasksController(ITaskService tasks)
@@ -17,41 +19,53 @@ public class TasksController : ControllerBase
         _tasks = tasks;
     }
 
+    // Every request carries an anonymous, browser-generated ID (X-Client-Id) that scopes the caller's tasks.
+    // A missing or malformed header is rejected by model binding; the all-zero GUID is reserved for pre-existing rows.
+    private ActionResult? RejectEmptyClientId(Guid clientId) =>
+        clientId == Guid.Empty
+            ? Problem(statusCode: StatusCodes.Status400BadRequest, title: $"A non-empty {ClientIdHeader} header is required.")
+            : null;
+
     // GET: api/v1/tasks
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TaskResponse>>> GetTasks()
+    public async Task<ActionResult<IEnumerable<TaskResponse>>> GetTasks([FromHeader(Name = ClientIdHeader)] Guid clientId)
     {
-        return Ok(await _tasks.GetAllAsync());
+        if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
+        return Ok(await _tasks.GetAllAsync(clientId));
     }
 
     // GET: api/v1/tasks/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<TaskResponse>> GetTask(int id)
+    public async Task<ActionResult<TaskResponse>> GetTask([FromHeader(Name = ClientIdHeader)] Guid clientId, int id)
     {
-        var task = await _tasks.GetByIdAsync(id);
+        if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
+        var task = await _tasks.GetByIdAsync(clientId, id);
         if (task is null) return NotFound();
         return task;
     }
 
     // POST: api/v1/tasks
     [HttpPost]
-    public async Task<ActionResult<TaskResponse>> CreateTask(CreateTaskRequest request)
+    public async Task<ActionResult<TaskResponse>> CreateTask([FromHeader(Name = ClientIdHeader)] Guid clientId, CreateTaskRequest request)
     {
-        var created = await _tasks.CreateAsync(request);
+        if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
+        var created = await _tasks.CreateAsync(clientId, request);
         return CreatedAtAction(nameof(GetTask), new { id = created.Id }, created);
     }
 
     // PUT: api/v1/tasks/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTask(int id, UpdateTaskRequest request)
+    public async Task<IActionResult> UpdateTask([FromHeader(Name = ClientIdHeader)] Guid clientId, int id, UpdateTaskRequest request)
     {
-        return await _tasks.UpdateAsync(id, request) ? NoContent() : NotFound();
+        if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
+        return await _tasks.UpdateAsync(clientId, id, request) ? NoContent() : NotFound();
     }
 
     // DELETE: api/v1/tasks/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTask(int id)
+    public async Task<IActionResult> DeleteTask([FromHeader(Name = ClientIdHeader)] Guid clientId, int id)
     {
-        return await _tasks.DeleteAsync(id) ? NoContent() : NotFound();
+        if (RejectEmptyClientId(clientId) is { } rejected) return rejected;
+        return await _tasks.DeleteAsync(clientId, id) ? NoContent() : NotFound();
     }
 }
