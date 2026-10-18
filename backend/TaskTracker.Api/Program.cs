@@ -1,4 +1,6 @@
 using Asp.Versioning;
+using TaskTracker.Api.RateLimiting;
+using TaskTracker.Core.Configuration;
 using TaskTracker.Data;
 using TaskTracker.Services;
 
@@ -23,7 +25,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDataLayer(builder.Configuration.GetConnectionString("DefaultConnection"));
-builder.Services.AddServicesLayer();
+builder.Services.AddServicesLayer(builder.Configuration.GetSection("Limits").Get<TaskLimits>() ?? new TaskLimits());
+builder.Services.AddAbuseProtection(builder.Configuration.GetSection("RateLimiting").Get<RateLimitSettings>() ?? new RateLimitSettings());
 
 // CORS — origins come from configuration (Cors:AllowedOrigins). Development origins live in
 // appsettings.Development.json; in Azure set Cors__AllowedOrigins__0, __1, ... as app settings.
@@ -51,6 +54,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicy);
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 

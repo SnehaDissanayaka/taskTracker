@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatListModule } from '@angular/material/list';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { TaskStore } from './task.store';
 import { TaskItem } from './task.model';
 
@@ -103,7 +105,10 @@ import { TaskItem } from './task.model';
 export class AppComponent implements OnInit {
   newTitle = '';
 
-  constructor(protected store: TaskStore) {}
+  constructor(
+    protected store: TaskStore,
+    private snackBar: MatSnackBar,
+  ) {}
 
   ngOnInit(): void {
     this.store.load();
@@ -112,14 +117,27 @@ export class AppComponent implements OnInit {
   addTask(): void {
     const title = this.newTitle.trim();
     if (!title) return;
-    this.store.add(title).subscribe(() => (this.newTitle = ''));
+    this.store.add(title).subscribe({
+      next: () => (this.newTitle = ''),
+      error: (err) => this.notifyError(err),
+    });
   }
 
   toggle(task: TaskItem): void {
-    this.store.toggle(task).subscribe();
+    this.store.toggle(task).subscribe({ error: (err) => this.notifyError(err) });
   }
 
   remove(task: TaskItem): void {
-    this.store.remove(task).subscribe();
+    this.store.remove(task).subscribe({ error: (err) => this.notifyError(err) });
+  }
+
+  private notifyError(err: HttpErrorResponse): void {
+    const message =
+      err.status === 409
+        ? 'You have reached the task limit for this browser. Delete some tasks to add more.'
+        : err.status === 429
+          ? 'Too many requests. Please wait a moment and try again.'
+          : 'Something went wrong. Please try again.';
+    this.snackBar.open(message, 'Dismiss', { duration: 6000 });
   }
 }
