@@ -13,33 +13,34 @@ public class TaskService : ITaskService
         _repository = repository;
     }
 
-    public async Task<IReadOnlyList<TaskResponse>> GetAllAsync()
+    public async Task<IReadOnlyList<TaskResponse>> GetAllAsync(Guid clientId)
     {
-        var tasks = await _repository.GetAllAsync();
+        var tasks = await _repository.GetAllAsync(clientId);
         return tasks.Select(ToResponse).ToList();
     }
 
-    public async Task<TaskResponse?> GetByIdAsync(int id)
+    public async Task<TaskResponse?> GetByIdAsync(Guid clientId, int id)
     {
-        var task = await _repository.GetByIdAsync(id);
+        var task = await _repository.GetByIdAsync(clientId, id);
         return task is null ? null : ToResponse(task);
     }
 
-    public async Task<TaskResponse> CreateAsync(CreateTaskRequest request)
+    public async Task<TaskResponse> CreateAsync(Guid clientId, CreateTaskRequest request)
     {
         var task = new TaskItem
         {
             Title = request.Title.Trim(),
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
+            ClientId = clientId,
         };
         var created = await _repository.AddAsync(task);
         return ToResponse(created);
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateTaskRequest request)
+    public async Task<bool> UpdateAsync(Guid clientId, int id, UpdateTaskRequest request)
     {
-        var task = await _repository.GetByIdAsync(id);
+        var task = await _repository.GetByIdAsync(clientId, id);
         if (task is null) return false;
 
         task.Title = request.Title.Trim();
@@ -50,9 +51,9 @@ public class TaskService : ITaskService
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid clientId, int id)
     {
-        var task = await _repository.GetByIdAsync(id);
+        var task = await _repository.GetByIdAsync(clientId, id);
         if (task is null) return false;
 
         await _repository.DeleteAsync(task);

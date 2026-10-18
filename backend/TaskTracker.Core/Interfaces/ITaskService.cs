@@ -4,9 +4,9 @@ namespace TaskTracker.Core.Interfaces;
 
 public interface ITaskService
 {
-    Task<IReadOnlyList<TaskResponse>> GetAllAsync();
-    Task<TaskResponse?> GetByIdAsync(int id);
-    Task<TaskResponse> CreateAsync(CreateTaskRequest request);
-    Task<bool> UpdateAsync(int id, UpdateTaskRequest request);
-    Task<bool> DeleteAsync(int id);
+    Task<IReadOnlyList<TaskResponse>> GetAllAsync(Guid clientId);
+    Task<TaskResponse?> GetByIdAsync(Guid clientId, int id);
+    Task<TaskResponse> CreateAsync(Guid clientId, CreateTaskRequest request);
+    Task<bool> UpdateAsync(Guid clientId, int id, UpdateTaskRequest request);
+    Task<bool> DeleteAsync(Guid clientId, int id);
 }

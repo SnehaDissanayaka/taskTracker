@@ -91,6 +91,11 @@ import { TaskItem } from './task.model';
           </div>
         </ng-template>
       </mat-card>
+
+      <p class="privacy-note">
+        Your tasks are private to this browser. They are saved under a random ID kept in
+        this browser's local storage; there is no account and no personal data.
+      </p>
     </main>
   `,
   styleUrl: './app.component.css',
